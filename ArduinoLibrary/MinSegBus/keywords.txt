@@ -1,0 +1,5 @@
+MinSegBus		KEYWORD1
+ToByteArray		KEYWORD2
+FloatToByteArray	KEYWORD2
+FromByteArray		KEYWORD2
+FloatFromByteArray 	KEYWORD2
