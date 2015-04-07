@@ -15,6 +15,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	
 
     unsigned char iAddress;
+    unsigned char cTemp;
     unsigned short iUnsignedShort;
     unsigned short iUnsignedShortArray[maxshortcount];
     unsigned char cBuff[maxbuffer];
@@ -435,6 +436,70 @@ int _tmain(int argc, _TCHAR* argv[])
         std::cout << "ToByteArray failed to return a valid frame for the 2-element array of floats." << std::endl;
         return 0;
     }
+
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Test harness section for the ring buffer management.  Begin by 
+    // making sure the structure of the ring buffer is what we expect.
+    /////////////////////////////////////////////////////////////////////
+    if (mbus->iGetRingBuffCount() == 0x40)
+    {
+        std::cout << "Ring buffer returned the expected buffer count." << std::endl;
+    }
+    else
+    {
+        std::cout << "Ring buffer did not return the expected buffer count." << std::endl;
+        return 0;
+    }
+
+
+    /////////////////////////////////////////////////////////////////////
+    // Next, test that a single value can be read and written successfully
+    /////////////////////////////////////////////////////////////////////
+    mbus->writeRingBuff(0x03);
+    cBuff[0] = mbus->readRingBuff(0x00);
+
+    if (cBuff[0] == 0x03)
+    {
+        std::cout << "Ring buffer correctly saved and retrieved a single value." << std::endl;
+    }
+    else
+    {
+        std::cout << "Ring buffer failed to save and/or retrieve a single value." << std::endl;
+        return 0;
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Write and read a complete sequence
+    /////////////////////////////////////////////////////////////////////
+    mbus->clearRingBuff();
+    for (cTemp = mbus->iGetRingBuffCount(); cTemp > 0; cTemp--)
+    {
+        mbus->writeRingBuff(cTemp);
+    }
+
+    // Check the first value
+    if (mbus->readRingBuff(0x00) != 0x01 )
+    {
+        std::cout << "Ring buffer failed to save and/or retrieve a series of values." << std::endl;
+        cTemp = mbus->readRingBuff(iIdx);
+        cTemp = (mbus->iGetRingBuffCount() - (char)iIdx);
+        return 0;
+    }
+    // Check the last value
+    if (mbus->readRingBuff(mbus->iGetRingBuffCount() - 1) != mbus->iGetRingBuffCount())
+    {
+        std::cout << "Ring buffer failed to save and/or retrieve a series of values." << std::endl;
+        cTemp = mbus->readRingBuff(mbus->iGetRingBuffCount());
+        cTemp = (mbus->iGetRingBuffCount() - (char)iIdx);
+        return 0;
+    }
+    std::cout << "Ring buffer correctly saved and retrieved a series of values." << std::endl;
+
+    /////////////////////////////////////////////////////////////////////
+    // If the code makes it this far, it must have worked
+    /////////////////////////////////////////////////////////////////////
 
     std::cout << "All tests completed successfully!!!" << std::endl;
 
