@@ -47,6 +47,10 @@ public:
     unsigned int iGetRingBuffCount();
     void clearRingBuff();
     void writeRingBuff(unsigned char cValue);
+    void writeRingBuff(unsigned char cValue, unsigned char *iAddress,
+        unsigned short *iUnsignedShortArray,
+        unsigned int iMaxShortCount,
+        unsigned int *iErrorCount);
     unsigned char readRingBuff(int iXn);
 
 private:

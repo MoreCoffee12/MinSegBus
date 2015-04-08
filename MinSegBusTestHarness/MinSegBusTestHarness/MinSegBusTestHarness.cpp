@@ -23,6 +23,7 @@ int _tmain(int argc, _TCHAR* argv[])
     unsigned int iBytesReturned;
     unsigned int iErrorCount;
     unsigned int iIdx;
+    int iTemp;
     float fValue;
     float fValueArray[maxfloatcount];
 
@@ -496,6 +497,95 @@ int _tmain(int argc, _TCHAR* argv[])
         return 0;
     }
     std::cout << "Ring buffer correctly saved and retrieved a series of values." << std::endl;
+
+    /////////////////////////////////////////////////////////////////////
+    // Write and read a complete frame of data
+    /////////////////////////////////////////////////////////////////////
+    mbus->clearRingBuff();
+
+    // Construct the frame for a 16-bit integer
+    iAddress = 0x001;
+    iUnsignedShortArray[0] = 1024;
+    iUnsignedShortArray[1] = 24;
+    iBytesReturned = 0;
+    mbus->ToByteArray(iAddress, iUnsignedShortArray, 2, maxbuffer, &cBuff[0], &iBytesReturned);
+    if (iBytesReturned == 13)
+    {
+        std::cout << "ToByteArray using the array call with 2 elements returned the expected number of bytes in ring buffer test." << std::endl;
+    }
+    else
+    {
+        std::cout << "ToByteArray using the array call with 2 elements failed to return the expected number of bytes in ring buffer test." << std::endl;
+        return 0;
+    }
+
+    // Write the frame to the ring buffer and clear the buffer
+    for (iTemp = 0; iTemp < (int)iBytesReturned; iTemp++)
+    {
+        mbus->writeRingBuff(cBuff[iTemp]);
+        cBuff[iTemp] = 0x00;
+    }
+
+    // Read the data back
+    for (iTemp = 0; iTemp < (int)iBytesReturned; iTemp++)
+    {
+        cBuff[iTemp] = mbus->readRingBuff((unsigned char)iBytesReturned - iTemp - 1);
+    }
+
+    // Is the returned byte array correct?
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0x00;
+    iUnsignedShortArray[1] = 0x00;
+    iErrorCount = 0;
+    mbus->FromByteArray(&iAddress, iUnsignedShortArray, maxshortcount, &cBuff[0], &iErrorCount);
+    if (iAddress == 0x01 && iUnsignedShortArray[0] == 0x400 && iUnsignedShortArray[1] == 0x018 && iErrorCount == 0x00)
+    {
+        std::cout << "ToByteArray using the array call with 2 elements returned a valid frame for the 16-bit integer in ring buffer test." << std::endl;
+    }
+    else
+    {
+        std::cout << "ToByteArray using the array call with 2 elements failed to return a valid frame for the 16-bit integer in ring buffer test." << std::endl;
+        return 0;
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Write data and sequentially check to see if there is a complete
+    // frame stored in the buffer
+    /////////////////////////////////////////////////////////////////////
+    // Construct the frame for a 16-bit integer
+    iAddress = 0x001;
+    iUnsignedShortArray[0] = 1024;
+    iUnsignedShortArray[1] = 24;
+    iBytesReturned = 0;
+    mbus->ToByteArray(iAddress, iUnsignedShortArray, 2, maxbuffer, &cBuff[0], &iBytesReturned);
+    if (iBytesReturned == 13)
+    {
+        std::cout << "ToByteArray using the array call with 2 elements returned the expected number of bytes in ring buffer sequential test." << std::endl;
+    }
+    else
+    {
+        std::cout << "ToByteArray using the array call with 2 elements failed to return the expected number of bytes in ring buffer sequential test." << std::endl;
+        return 0;
+    }
+
+    // Write the data and try to convert after each byte is written
+    iTemp = 0;
+    iErrorCount = 10;
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0x00;
+    iUnsignedShortArray[1] = 0x00;
+    while (iErrorCount > 0)
+    {
+        mbus->writeRingBuff(cBuff[iTemp], &iAddress,
+            iUnsignedShortArray,
+            maxshortcount,
+            &iErrorCount);
+
+
+    }
+
+
+
 
     /////////////////////////////////////////////////////////////////////
     // If the code makes it this far, it must have worked

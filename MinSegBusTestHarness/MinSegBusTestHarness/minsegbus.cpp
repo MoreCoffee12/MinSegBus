@@ -349,3 +349,51 @@ unsigned char MinSegBus::readRingBuff(int iXn)
 {
     return cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex + (~iXn)) & BUFF_SIZE_MASK];
 }
+
+void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
+    unsigned short *iUnsignedShortArray,
+    unsigned int iMaxShortCount,
+    unsigned int *iErrorCount)
+{
+    unsigned char cTemp;
+    int idxEnd;
+    int idxStart;
+
+    cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
+    idxEnd = (cRingBuffer.iWriteIndex - 1);
+
+    if (cValue == 0x00)
+    {
+        if (readRingBuff(idxEnd-1) == 0x00)
+        {
+            // Go back until two other adjacent zeros are found
+            idxStart = idxEnd - 3;
+            while (readRingBuff(idxStart) != 0x00 && readRingBuff(idxStart + 1) != 0x00)
+            {
+                idxStart--;
+            }
+
+            // The frame has a minimum size of 9 
+            if ((idxStart + BUFF_SIZE) - idxEnd > 0x08)
+            {
+
+                cTemp = readRingBuff(idxEnd - 2);
+
+                // For this case the maximum size is 64
+                if (cTemp < 0x40)
+                {
+                    unsigned char cBuff[BUFF_SIZE];
+
+                    // Read the data into the conventional buffer
+                    for (int iTemp = 0; iTemp < cTemp; iTemp++)
+                    {
+                        cBuff[iTemp] = readRingBuff(cTemp - iTemp);
+                    }
+                }
+
+            }
+        }
+    }
+
+    return;
+}
