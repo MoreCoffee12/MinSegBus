@@ -49,7 +49,7 @@ public:
     void writeRingBuff(unsigned char cValue);
     void writeRingBuff(unsigned char cValue, unsigned char *iAddress,
         unsigned short *iUnsignedShortArray,
-        unsigned int iMaxShortCount,
+        unsigned int iShortCount,
         unsigned int *iErrorCount);
     unsigned char readRingBuff(int iXn);
 
@@ -66,6 +66,7 @@ private:
 
     buffer cRingBuffer;
     unsigned int _iRingBufferCount;
+
 };
 
 

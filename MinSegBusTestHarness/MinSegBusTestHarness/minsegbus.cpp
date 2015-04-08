@@ -4,11 +4,14 @@ extern "C" {
 }
 
 #include "minsegbus.h"
+#include <memory>
 
 MinSegBus::MinSegBus()
 {
     _iRingBufferCount = BUFF_SIZE;
     cRingBuffer.iWriteIndex = 0x00;
+    std::fill_n(cRingBuffer.cRingBuff, BUFF_SIZE, 0xFF);
+
 }
 
 
@@ -333,11 +336,7 @@ unsigned int MinSegBus::iGetRingBuffCount()
 void MinSegBus::clearRingBuff()
 {
     cRingBuffer.iWriteIndex = 0x00;
-    for (unsigned char idx = 0; idx < BUFF_SIZE; idx++)
-    {
-        writeRingBuff(0x00);
-    }
-    cRingBuffer.iWriteIndex = 0x00;
+    std::fill_n(cRingBuffer.cRingBuff, BUFF_SIZE, 0xFF);
 }
 
 void MinSegBus::writeRingBuff(unsigned char cValue)
@@ -352,47 +351,40 @@ unsigned char MinSegBus::readRingBuff(int iXn)
 
 void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned short *iUnsignedShortArray,
-    unsigned int iMaxShortCount,
+    unsigned int iShortCount,
     unsigned int *iErrorCount)
 {
-    unsigned char cTemp;
     int idxEnd;
     int idxStart;
+    int idxTemp;
+    unsigned int iFrameSize = 9 + (iShortCount * 2);
+
+    // Assume there is an error
+    *iErrorCount = 0x01;
 
     cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
     idxEnd = (cRingBuffer.iWriteIndex - 1);
 
-    if (cValue == 0x00)
+    // Assume that these are the last two zeros of the frame
+    if (cValue == 0x00 && readRingBuff(idxEnd - 1) == 0x00)
     {
-        if (readRingBuff(idxEnd-1) == 0x00)
+        // Go back to the first of the frame
+        idxStart = idxEnd - iFrameSize;
+
+        // Create and initialize the buffer
+        unsigned char cBuff[BUFF_SIZE];
+        std::fill_n(cBuff, BUFF_SIZE, 0xFF);
+
+        // Read the data into the conventional buffer
+        for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
         {
-            // Go back until two other adjacent zeros are found
-            idxStart = idxEnd - 3;
-            while (readRingBuff(idxStart) != 0x00 && readRingBuff(idxStart + 1) != 0x00)
-            {
-                idxStart--;
-            }
-
-            // The frame has a minimum size of 9 
-            if ((idxStart + BUFF_SIZE) - idxEnd > 0x08)
-            {
-
-                cTemp = readRingBuff(idxEnd - 2);
-
-                // For this case the maximum size is 64
-                if (cTemp < 0x40)
-                {
-                    unsigned char cBuff[BUFF_SIZE];
-
-                    // Read the data into the conventional buffer
-                    for (int iTemp = 0; iTemp < cTemp; iTemp++)
-                    {
-                        cBuff[iTemp] = readRingBuff(cTemp - iTemp);
-                    }
-                }
-
-            }
+            cBuff[idxTemp] = readRingBuff(idxStart - idxTemp);
         }
+
+        // See if this is a valid frame
+        *iErrorCount = 0x00;
+        FromByteArray(iAddress, iUnsignedShortArray, iShortCount, &cBuff[0], iErrorCount);
+
     }
 
     return;

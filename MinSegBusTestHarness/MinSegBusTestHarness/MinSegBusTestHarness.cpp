@@ -572,16 +572,28 @@ int _tmain(int argc, _TCHAR* argv[])
     iTemp = 0;
     iErrorCount = 10;
     iAddress = 0x00;
-    iUnsignedShortArray[0] = 0x00;
-    iUnsignedShortArray[1] = 0x00;
-    while (iErrorCount > 0)
+    iUnsignedShortArray[0] = 0;
+    iUnsignedShortArray[1] = 0;
+    unsigned int iShortCount = 2;
+    while (iErrorCount > 0  && iTemp < 13)
     {
+
+        iErrorCount = 0;
         mbus->writeRingBuff(cBuff[iTemp], &iAddress,
             iUnsignedShortArray,
-            maxshortcount,
+            iShortCount,
             &iErrorCount);
+        ++iTemp;
 
-
+    }
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
+    {
+        std::cout << "writeRingBuff with arguments returned the expected values." << std::endl;
+    }
+    else
+    {
+        std::cout << "writeRingBuff with arguments failed to return the expected values." << std::endl;
+        return 0;
     }
 
 
