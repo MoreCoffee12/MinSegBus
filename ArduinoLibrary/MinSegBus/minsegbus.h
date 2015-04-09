@@ -1,7 +1,15 @@
 #ifndef MinSegBus_h
 #define MinSegBus_h
 
-#include "Arduino.h"
+// The BUFF_SIZE must be a power of 2 for the masking to work
+#define BUFF_SIZE 64
+#define BUFF_SIZE_MASK (BUFF_SIZE-1)
+
+typedef struct buffer
+{
+    unsigned char cRingBuff[BUFF_SIZE];
+    unsigned int iWriteIndex;
+}buffer;
 
 class MinSegBus
 {
@@ -35,6 +43,15 @@ public:
         unsigned char *cBuff,
         unsigned int *iErrorCount);
 
+    // These methods relate to the ring buffer
+    unsigned int iGetRingBuffCount();
+    void clearRingBuff();
+    void writeRingBuff(unsigned char cValue);
+    void writeRingBuff(unsigned char cValue, unsigned char *iAddress,
+        unsigned short *iUnsignedShortArray,
+        unsigned int iShortCount,
+        unsigned int *iErrorCount);
+    unsigned char readRingBuff(int iXn);
 
 private:
     unsigned short _bUpdateCRC(unsigned short crc, unsigned char data);
@@ -46,6 +63,10 @@ private:
 
     void _bIsFrameValid(unsigned char *cBuff,
         unsigned int *iErrorCount, unsigned int *iFrameSize);
+
+    buffer cRingBuffer;
+    unsigned int _iRingBufferCount;
+
 };
 
 

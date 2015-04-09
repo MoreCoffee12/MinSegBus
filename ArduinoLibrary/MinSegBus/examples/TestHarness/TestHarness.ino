@@ -21,12 +21,14 @@ void loop()
 	
 
     unsigned char iAddress;
+    unsigned char cTemp;
     unsigned short iUnsignedShort;
     unsigned short iUnsignedShortArray[maxshortcount];
     unsigned char cBuff[maxbuffer];
     unsigned int iBytesReturned;
     unsigned int iErrorCount;
     unsigned int iIdx;
+    int iTemp;
     float fValue;
     float fValueArray[maxfloatcount];
 
@@ -224,10 +226,116 @@ void loop()
         return;
     }
     
+    /////////////////////////////////////////////////////////////////////
+    // Next, test that a single value can be read and written successfully
+    /////////////////////////////////////////////////////////////////////
+    mbus.writeRingBuff(0x03);
+    cBuff[0] = mbus.readRingBuff(0x00);
+
+    if (cBuff[0] == 0x03)
+    {
+        Serial.println("Step 17 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 17 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+    
+    /////////////////////////////////////////////////////////////////////
+    // Write and read a complete sequence
+    /////////////////////////////////////////////////////////////////////
+    mbus.clearRingBuff();
+    for (cTemp = mbus.iGetRingBuffCount(); cTemp > 0; cTemp--)
+    {
+        mbus.writeRingBuff(cTemp);
+    }
+
+    // Check the first value
+    if (mbus.readRingBuff(0x00) != 0x01 )
+    {
+        Serial.println("Step 18 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+    // Check the last value
+    if (mbus.readRingBuff(mbus.iGetRingBuffCount() - 1) != mbus.iGetRingBuffCount())
+    {
+        Serial.println("Step 18 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+    Serial.println("Step 18 OK.");
+    delay(100);
+    
+     /////////////////////////////////////////////////////////////////////
+    // Write and read a complete frame of data
+    /////////////////////////////////////////////////////////////////////
+    mbus.clearRingBuff();
+
+    // Construct the frame for a 16-bit integer
+    iAddress = 0x001;
+    iUnsignedShortArray[0] = 1024;
+    iUnsignedShortArray[1] = 24;
+    iBytesReturned = 0;
+    mbus.ToByteArray(iAddress, iUnsignedShortArray, 2, maxbuffer, &cBuff[0], &iBytesReturned);
+    if (iBytesReturned == 13)
+    {
+        Serial.println("Step 19 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 19 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+
+    // Write the frame to the ring buffer and clear the buffer
+    for (iTemp = 0; iTemp < (int)iBytesReturned; iTemp++)
+    {
+        mbus.writeRingBuff(cBuff[iTemp]);
+        cBuff[iTemp] = 0x00;
+    }
+
+    // Read the data back
+    for (iTemp = 0; iTemp < (int)iBytesReturned; iTemp++)
+    {
+        cBuff[iTemp] = mbus.readRingBuff((unsigned char)iBytesReturned - iTemp - 1);
+    }
+
+    // Is the returned byte array correct?
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0x00;
+    iUnsignedShortArray[1] = 0x00;
+    iErrorCount = 0;
+    mbus.FromByteArray(&iAddress, iUnsignedShortArray, maxshortcount, &cBuff[0], &iErrorCount);
+    if (iAddress == 0x01 && iUnsignedShortArray[0] == 0x400 && iUnsignedShortArray[1] == 0x018 && iErrorCount == 0x00)
+    {
+        Serial.println("Step 20 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 20 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+    
+    
+    
+    // End of tests
     Serial.println("All tests completed successfully!!!");
     Serial.println("");
-    
     delay(2000);
-    
+ 
+
     return;
 }

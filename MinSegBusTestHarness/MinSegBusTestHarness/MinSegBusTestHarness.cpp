@@ -484,16 +484,12 @@ int _tmain(int argc, _TCHAR* argv[])
     if (mbus->readRingBuff(0x00) != 0x01 )
     {
         std::cout << "Ring buffer failed to save and/or retrieve a series of values." << std::endl;
-        cTemp = mbus->readRingBuff(iIdx);
-        cTemp = (mbus->iGetRingBuffCount() - (char)iIdx);
         return 0;
     }
     // Check the last value
     if (mbus->readRingBuff(mbus->iGetRingBuffCount() - 1) != mbus->iGetRingBuffCount())
     {
         std::cout << "Ring buffer failed to save and/or retrieve a series of values." << std::endl;
-        cTemp = mbus->readRingBuff(mbus->iGetRingBuffCount());
-        cTemp = (mbus->iGetRingBuffCount() - (char)iIdx);
         return 0;
     }
     std::cout << "Ring buffer correctly saved and retrieved a series of values." << std::endl;
@@ -595,9 +591,6 @@ int _tmain(int argc, _TCHAR* argv[])
         std::cout << "writeRingBuff with arguments failed to return the expected values." << std::endl;
         return 0;
     }
-
-
-
 
     /////////////////////////////////////////////////////////////////////
     // If the code makes it this far, it must have worked

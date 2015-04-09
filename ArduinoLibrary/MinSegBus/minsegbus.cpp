@@ -5,8 +5,16 @@ extern "C" {
 
 #include "minsegbus.h"
 
+
 MinSegBus::MinSegBus()
 {
+    _iRingBufferCount = BUFF_SIZE;
+    cRingBuffer.iWriteIndex = 0x00;
+    for (int idx = 0; idx < BUFF_SIZE; ++idx)
+    {
+        cRingBuffer.cRingBuff[idx] = 0xFF;
+    }
+
 }
 
 
@@ -109,7 +117,6 @@ void MinSegBus::FromByteArray(unsigned char *iAddress,
 
 {
     unsigned int iBuffIdx;
-    unsigned int i;
     unsigned int iFrameSize;
 
     // Initialize the buffer pointer
@@ -157,7 +164,6 @@ void MinSegBus::FloatFromByteArray(unsigned char *iAddress,
 {
 
     unsigned int iBuffIdx;
-    unsigned int i;
     unsigned int iFrameSize;
     unsigned int iBytesSize;
 
@@ -233,19 +239,19 @@ bool MinSegBus::_bCreateFrontFrame(unsigned int iByteCount, unsigned char iAddre
     cBuff[*idx] = 0x00;
     *idx = *idx + 1;
 
-    // One byte for the total number of bytes in the frame
-    cBuff[*idx] = iByteCount + 9;
-    *idx = *idx + 1;
+// One byte for the total number of bytes in the frame
+cBuff[*idx] = iByteCount + 9;
+*idx = *idx + 1;
 
-    // One byte for the address
-    cBuff[*idx] = iAddress;
-    *idx = *idx + 1;
+// One byte for the address
+cBuff[*idx] = iAddress;
+*idx = *idx + 1;
 
-    // This is the function (type descriptor)
-    cBuff[*idx] = cType;
-    *idx = *idx + 1;
+// This is the function (type descriptor)
+cBuff[*idx] = cType;
+*idx = *idx + 1;
 
-    return true;
+return true;
 }
 
 
@@ -320,6 +326,74 @@ void  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
     {
         *iErrorCount = *iErrorCount + 1;
         return;
+    }
+
+    return;
+}
+
+unsigned int MinSegBus::iGetRingBuffCount()
+{
+    return _iRingBufferCount;
+}
+
+void MinSegBus::clearRingBuff()
+{
+    cRingBuffer.iWriteIndex = 0x00;
+    for (int idx = 0; idx < BUFF_SIZE; ++idx)
+    {
+        cRingBuffer.cRingBuff[idx] = 0xFF;
+    }
+}
+
+void MinSegBus::writeRingBuff(unsigned char cValue)
+{
+    cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
+}
+
+unsigned char MinSegBus::readRingBuff(int iXn)
+{
+    return cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex + (~iXn)) & BUFF_SIZE_MASK];
+}
+
+void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
+    unsigned short *iUnsignedShortArray,
+    unsigned int iShortCount,
+    unsigned int *iErrorCount)
+{
+    int idxEnd;
+    int idxStart;
+    int idxTemp;
+    unsigned int iFrameSize = 9 + (iShortCount * 2);
+
+    // Assume there is an error
+    *iErrorCount = 0x01;
+
+    cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
+    idxEnd = (cRingBuffer.iWriteIndex - 1);
+
+    // Assume that these are the last two zeros of the frame
+    if (cValue == 0x00 && readRingBuff(idxEnd - 1) == 0x00)
+    {
+        // Go back to the first of the frame
+        idxStart = idxEnd - iFrameSize;
+
+        // Create and initialize the buffer
+        unsigned char cBuff[BUFF_SIZE];
+        for (int idx = 0; idx < BUFF_SIZE; ++idx)
+        {
+            cBuff[idx] = 0xFF;
+        }
+
+        // Read the data into the conventional buffer
+        for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
+        {
+            cBuff[idxTemp] = readRingBuff(idxStart - idxTemp);
+        }
+
+        // See if this is a valid frame
+        *iErrorCount = 0x00;
+        FromByteArray(iAddress, iUnsignedShortArray, iShortCount, &cBuff[0], iErrorCount);
+
     }
 
     return;

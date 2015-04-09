@@ -4,13 +4,16 @@ extern "C" {
 }
 
 #include "minsegbus.h"
-#include <memory>
+
 
 MinSegBus::MinSegBus()
 {
     _iRingBufferCount = BUFF_SIZE;
     cRingBuffer.iWriteIndex = 0x00;
-    std::fill_n(cRingBuffer.cRingBuff, BUFF_SIZE, 0xFF);
+    for (int idx = 0; idx < BUFF_SIZE; ++idx)
+    {
+        cRingBuffer.cRingBuff[idx] = 0xFF;
+    }
 
 }
 
@@ -336,7 +339,10 @@ unsigned int MinSegBus::iGetRingBuffCount()
 void MinSegBus::clearRingBuff()
 {
     cRingBuffer.iWriteIndex = 0x00;
-    std::fill_n(cRingBuffer.cRingBuff, BUFF_SIZE, 0xFF);
+    for (int idx = 0; idx < BUFF_SIZE; ++idx)
+    {
+        cRingBuffer.cRingBuff[idx] = 0xFF;
+    }
 }
 
 void MinSegBus::writeRingBuff(unsigned char cValue)
@@ -373,7 +379,10 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
 
         // Create and initialize the buffer
         unsigned char cBuff[BUFF_SIZE];
-        std::fill_n(cBuff, BUFF_SIZE, 0xFF);
+        for (int idx = 0; idx < BUFF_SIZE; ++idx)
+        {
+            cBuff[idx] = 0xFF;
+        }
 
         // Read the data into the conventional buffer
         for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
