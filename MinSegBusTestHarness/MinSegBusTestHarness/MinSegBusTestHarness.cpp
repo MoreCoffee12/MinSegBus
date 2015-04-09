@@ -23,6 +23,7 @@ int _tmain(int argc, _TCHAR* argv[])
     unsigned int iBytesReturned;
     unsigned int iErrorCount;
     unsigned int iIdx;
+    unsigned int iShortCount;
     int iTemp;
     float fValue;
     float fValueArray[maxfloatcount];
@@ -188,38 +189,7 @@ int _tmain(int argc, _TCHAR* argv[])
     else
     {
         std::cout << "Failed to retrieved the 16-bit integer." << std::endl;
-        //return 0;
-    }
-
-    // Test the ability of the code to retrieve the 16-bit value of 4-element integer array
-    cBuff[0] = 0x00;
-    cBuff[1] = 0x00;
-    cBuff[2] = 0x11;
-    cBuff[3] = 0x01;
-    cBuff[4] = 0x01;
-    cBuff[5] = 0xD3;
-    cBuff[6] = 0x00;
-    cBuff[7] = 0x06;
-    cBuff[8] = 0x00;
-    cBuff[9] = 0x00;
-    cBuff[10] = 0x00;
-    cBuff[11] = 0xE8;
-    cBuff[12] = 0x00;
-    cBuff[13] = 0x74;
-    cBuff[14] = 0xCB;
-    cBuff[15] = 0x00;
-    cBuff[16] = 0x00;
-    iErrorCount = 0;
-    iUnsignedShort = 0;
-    mbus->FromByteArray(&iAddress, iUnsignedShortArray, 4, &cBuff[0], &iErrorCount);
-    if (iErrorCount == 0x00 && iUnsignedShortArray[0] == 0x15C)
-    {
-        std::cout << "Successfully retrieved the 4-element 16-bit integer array." << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to retrieved the 4-element 16-bit integer array." << std::endl;
-        //return 0;
+        return 0;
     }
 
     /////////////////////////////////////////////////////////////////////
@@ -564,13 +534,40 @@ int _tmain(int argc, _TCHAR* argv[])
         return 0;
     }
 
-    // Write the data and try to convert after each byte is written
+    // Write the data and try to convert after each byte is written (C# friendly implementation)
     iTemp = 0;
     iErrorCount = 10;
     iAddress = 0x00;
     iUnsignedShortArray[0] = 0;
     iUnsignedShortArray[1] = 0;
-    unsigned int iShortCount = 2;
+    iShortCount = 2;
+    while (iErrorCount > 0 && iTemp < 13)
+    {
+
+        mbus->writeRingBuff(cBuff[iTemp], 
+            iUnsignedShortArray,
+            iShortCount);
+        iErrorCount = mbus->iGetErrorCount();
+        ++iTemp;
+
+    }
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
+    {
+        std::cout << "writeRingBuff (c# friendly) with arguments returned the expected values." << std::endl;
+    }
+    else
+    {
+        std::cout << "writeRingBuff (c# friendly) with arguments failed to return the expected values." << std::endl;
+        return 0;
+    }
+
+    // Write the data and try to convert after each byte is written (Cpp friendly implementation)
+    iTemp = 0;
+    iErrorCount = 10;
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0;
+    iUnsignedShortArray[1] = 0;
+    iShortCount = 2;
     while (iErrorCount > 0  && iTemp < 13)
     {
 
@@ -584,11 +581,11 @@ int _tmain(int argc, _TCHAR* argv[])
     }
     if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
     {
-        std::cout << "writeRingBuff with arguments returned the expected values." << std::endl;
+        std::cout << "writeRingBuff (cpp friendly) with arguments returned the expected values." << std::endl;
     }
     else
     {
-        std::cout << "writeRingBuff with arguments failed to return the expected values." << std::endl;
+        std::cout << "writeRingBuff (cpp friendly) with arguments failed to return the expected values." << std::endl;
         return 0;
     }
 

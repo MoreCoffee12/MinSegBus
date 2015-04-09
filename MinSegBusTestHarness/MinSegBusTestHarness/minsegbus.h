@@ -47,13 +47,22 @@ public:
     unsigned int iGetRingBuffCount();
     void clearRingBuff();
     void writeRingBuff(unsigned char cValue);
-    void writeRingBuff(unsigned char cValue, unsigned char *iAddress,
+    void writeRingBuff(unsigned char cValue, 
+        unsigned short *iUnsignedShortArray, 
+        unsigned int iShortCount);
+    void writeRingBuff(unsigned char cValue, 
+        unsigned char *iAddress,
         unsigned short *iUnsignedShortArray,
         unsigned int iShortCount,
         unsigned int *iErrorCount);
     unsigned char readRingBuff(int iXn);
 
+    // Access functions
+    unsigned int iGetErrorCount();
+    unsigned int iGetAddress();
+
 private:
+
     unsigned short _bUpdateCRC(unsigned short crc, unsigned char data);
 
     bool _bCreateFrontFrame(unsigned int iByteCount, unsigned char iAddress,
@@ -61,8 +70,11 @@ private:
 
     bool _bCreateBackFrame(unsigned char *cBuff, unsigned int *idx);
 
-    void _bIsFrameValid(unsigned char *cBuff,
-        unsigned int *iErrorCount, unsigned int *iFrameSize);
+    bool _bIsFrameValid(unsigned char *cBuff,
+        unsigned int *iFrameSize);
+
+    unsigned int _iErrorCount;
+    unsigned int _iAddress;
 
     buffer cRingBuffer;
     unsigned int _iRingBufferCount;
