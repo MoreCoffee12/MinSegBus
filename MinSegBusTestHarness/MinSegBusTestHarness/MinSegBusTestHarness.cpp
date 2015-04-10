@@ -442,6 +442,34 @@ int _tmain(int argc, _TCHAR* argv[])
     }
 
     /////////////////////////////////////////////////////////////////////
+    // Test that a single value can be read and written successfully to
+    // the next position
+    /////////////////////////////////////////////////////////////////////
+    mbus->writeRingBuff(0x04);
+    cBuff[0] = mbus->readRingBuff(0x00);
+
+    if (cBuff[0] == 0x04)
+    {
+        std::cout << "Ring buffer correctly saved and retrieved a single value, Test 2." << std::endl;
+    }
+    else
+    {
+        std::cout << "Ring buffer failed to save and/or retrieve a single value, Test 2." << std::endl;
+        return 0;
+    }
+
+    cBuff[0] = mbus->readRingBuff(1);
+    if (cBuff[0] == 0x03)
+    {
+        std::cout << "Ring buffer correctly saved and retrieved a single value, Test 3." << std::endl;
+    }
+    else
+    {
+        std::cout << "Ring buffer failed to save and/or retrieve a single value, Test 3." << std::endl;
+        return 0;
+    }
+
+    /////////////////////////////////////////////////////////////////////
     // Write and read a complete sequence
     /////////////////////////////////////////////////////////////////////
     mbus->clearRingBuff();
@@ -560,6 +588,37 @@ int _tmain(int argc, _TCHAR* argv[])
         std::cout << "writeRingBuff (c# friendly) with arguments failed to return the expected values." << std::endl;
         return 0;
     }
+
+    // Write the data and try to convert after each byte is written (C# friendly implementation).
+    // This loops through the data many times to ensure the ring buffer indexing is working
+    // correctly
+    iAddress = 0x00;
+    iShortCount = 2;
+    for (int iTemp2 = 0; iTemp2 < 100; ++iTemp2)
+    {
+
+        iTemp = 0;
+        iErrorCount = 10;
+        iUnsignedShortArray[0] = 0;
+        iUnsignedShortArray[1] = 0;
+        while (iErrorCount > 0 && iTemp < 13)
+        {
+
+            mbus->writeRingBuff(cBuff[iTemp],
+                iUnsignedShortArray,
+                iShortCount);
+            iErrorCount = mbus->iGetErrorCount();
+            ++iTemp;
+
+        }
+        if (iUnsignedShortArray[0] != 1024 || iUnsignedShortArray[1] != 24)
+        {
+            std::cout << "writeRingBuff (c# friendly) with arguments, multiple loop, failed to return the expected values." << std::endl;
+            return 0;
+        }
+
+    }
+    std::cout << "writeRingBuff (c# friendly) with arguments, multiple loop, succeeded." << std::endl;
 
     // Write the data and try to convert after each byte is written (Cpp friendly implementation)
     iTemp = 0;

@@ -368,7 +368,8 @@ void MinSegBus::writeRingBuff(unsigned char cValue)
 
 unsigned char MinSegBus::readRingBuff(int iXn)
 {
-    return cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex + (~iXn)) & BUFF_SIZE_MASK];
+    unsigned int iTemp = (cRingBuffer.iWriteIndex + (~iXn)) & BUFF_SIZE_MASK;
+    return cRingBuffer.cRingBuff[iTemp];
 }
 
 void MinSegBus::writeRingBuff(unsigned char cValue,
@@ -391,8 +392,6 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned int iShortCount,
     unsigned int *iErrorCount)
 {
-    int idxEnd;
-    int idxStart;
     int idxTemp;
     unsigned int iFrameSize = 9 + (iShortCount * 2);
 
@@ -400,13 +399,10 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     _iErrorCount = 0x01;
 
     cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
-    idxEnd = (cRingBuffer.iWriteIndex - 1);
 
     // Assume that these are the last two zeros of the frame
-    if (cValue == 0x00 && readRingBuff(idxEnd - 1) == 0x00)
+    if (cValue == 0x00 && readRingBuff(1) == 0x00)
     {
-        // Go back to the first of the frame
-        idxStart = idxEnd - iFrameSize;
 
         // Create and initialize the buffer
         unsigned char cBuff[BUFF_SIZE];
@@ -418,7 +414,7 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
         // Read the data into the conventional buffer
         for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
         {
-            cBuff[idxTemp] = readRingBuff(idxStart - idxTemp);
+            cBuff[iFrameSize - idxTemp - 1] = readRingBuff( idxTemp);
         }
 
         // See if this is a valid frame
