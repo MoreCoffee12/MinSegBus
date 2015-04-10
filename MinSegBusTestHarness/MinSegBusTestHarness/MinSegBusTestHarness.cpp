@@ -30,7 +30,7 @@ int _tmain(int argc, _TCHAR* argv[])
 
     /////////////////////////////////////////////////////////////////////
     // Test harness section for the deconstruction of a frame for 
-    // a 16-bit integer
+    // a 16-bit integer.
     /////////////////////////////////////////////////////////////////////
 
     // Check that the methods catch a frame without the two leading zeros
