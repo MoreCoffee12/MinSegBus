@@ -28,6 +28,7 @@ void loop()
     unsigned int iBytesReturned;
     unsigned int iErrorCount;
     unsigned int iIdx;
+    unsigned int iShortCount;
     int iTemp;
     float fValue;
     float fValueArray[maxfloatcount];
@@ -329,7 +330,89 @@ void loop()
         return;
     }
     
-    
+    /////////////////////////////////////////////////////////////////////
+    // Write data and sequentially check to see if there is a complete
+    // frame stored in the buffer
+    /////////////////////////////////////////////////////////////////////
+    // Construct the frame for a 16-bit integer
+    iAddress = 0x001;
+    iUnsignedShortArray[0] = 1024;
+    iUnsignedShortArray[1] = 24;
+    iBytesReturned = 0;
+    mbus.ToByteArray(iAddress, iUnsignedShortArray, 2, maxbuffer, &cBuff[0], &iBytesReturned);
+    if (iBytesReturned == 13)
+    {
+        Serial.println("Step 21 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 21 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+
+    // Write the data and try to convert after each byte is written (C# friendly implementation)
+    iTemp = 0;
+    iErrorCount = 10;
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0;
+    iUnsignedShortArray[1] = 0;
+    iShortCount = 2;
+    while (iErrorCount > 0 && iTemp < 13)
+    {
+
+        mbus.writeRingBuff(cBuff[iTemp], 
+            iUnsignedShortArray,
+            iShortCount);
+        iErrorCount = mbus.iGetErrorCount();
+        ++iTemp;
+
+    }
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
+    {
+        Serial.println("Step 22 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 22 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }
+
+    // Write the data and try to convert after each byte is written (Cpp friendly implementation)
+    iTemp = 0;
+    iErrorCount = 10;
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0;
+    iUnsignedShortArray[1] = 0;
+    iShortCount = 2;
+    while (iErrorCount > 0  && iTemp < 13)
+    {
+
+        iErrorCount = 0;
+        mbus.writeRingBuff(cBuff[iTemp], &iAddress,
+            iUnsignedShortArray,
+            iShortCount,
+            &iErrorCount);
+        ++iTemp;
+
+    }
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
+    {
+        Serial.println("Step 23 OK.");
+        delay(100);
+    }
+    else
+    {
+        Serial.println("Step 23 NOT OK.");
+        Serial.println("");
+        delay(2000);
+        return;
+    }    
     
     // End of tests
     Serial.println("All tests completed successfully!!!");

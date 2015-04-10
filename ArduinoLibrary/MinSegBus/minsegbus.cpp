@@ -15,6 +15,9 @@ MinSegBus::MinSegBus()
         cRingBuffer.cRingBuff[idx] = 0xFF;
     }
 
+    _iErrorCount = 100;
+    _iAddress = 0x00;
+
 }
 
 
@@ -123,12 +126,12 @@ void MinSegBus::FromByteArray(unsigned char *iAddress,
     iBuffIdx = 0;
 
     // Reset the error counter
-    *iErrorCount = 0;
+    _iErrorCount = 0;
 
     // Is this a valid frame?
-    _bIsFrameValid(cBuff, iErrorCount, &iFrameSize);
-    if (*iErrorCount > 0)
+    if( !_bIsFrameValid(cBuff, &iFrameSize) && (_iErrorCount > 0) )
     {
+        *iErrorCount = _iErrorCount;
         return;
     }
 
@@ -149,7 +152,8 @@ void MinSegBus::FromByteArray(unsigned char *iAddress,
     }
     else
     {
-        *iErrorCount = *iErrorCount + 1;
+        ++_iErrorCount;
+        *iErrorCount = _iErrorCount;
         return;
     }
 }
@@ -171,15 +175,15 @@ void MinSegBus::FloatFromByteArray(unsigned char *iAddress,
     iBuffIdx = 0;
 
     // Reset the error counter
-    *iErrorCount = 0;
+    _iErrorCount = 0;
 
     // Define the number of bytes for the float
     iBytesSize = sizeof(float);
 
     // Is this a valid frame?
-    _bIsFrameValid(cBuff, iErrorCount, &iFrameSize);
-    if (*iErrorCount > 0)
+    if( !_bIsFrameValid(cBuff, &iFrameSize) && (_iErrorCount > 0) )
     {
+        *iErrorCount = _iErrorCount;
         return;
     }
 
@@ -189,7 +193,8 @@ void MinSegBus::FloatFromByteArray(unsigned char *iAddress,
     // Make sure we don't overrun the buffer
     if ((iFrameSize - 9) / iBytesSize > iMaxFloatCount)
     {
-        *iErrorCount = *iErrorCount + 1;
+        ++_iErrorCount;
+        *iErrorCount = _iErrorCount;
         return;
     }
 
@@ -208,7 +213,8 @@ void MinSegBus::FloatFromByteArray(unsigned char *iAddress,
     }
     else
     {
-        *iErrorCount = *iErrorCount + 1;
+        ++_iErrorCount;
+        *iErrorCount = _iErrorCount;
         return;
     }
 
@@ -283,8 +289,8 @@ bool MinSegBus::_bCreateBackFrame(unsigned char *cBuff, unsigned int * idx)
     return true;
 }
 
-void  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
-    unsigned int *iErrorCount, unsigned int *iFrameSize)
+bool  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
+    unsigned int *iFrameSize)
 {
 
     unsigned short crc;
@@ -293,16 +299,16 @@ void  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
     // Are the first two characters zero?  (mark start condition)
     if ((cBuff[0] + cBuff[1]) > 0)
     {
-        *iErrorCount = *iErrorCount + 1;
-        return;
+        ++_iErrorCount;
+        return false;
     }
 
     // Retrieve the frame size
     *iFrameSize = cBuff[2];
     if (*iFrameSize < 11)
     {
-        *iErrorCount = *iErrorCount + 1;
-        return;
+        ++_iErrorCount;
+        return false;
     }
 
     // Calculate the CRC
@@ -316,24 +322,34 @@ void  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
     i = *((unsigned short*)&cBuff[*iFrameSize - 4]);
     if (crc != *((unsigned short*)&cBuff[*iFrameSize - 4]))
     {
-        *iErrorCount = *iErrorCount + 1;
-        return;
+        ++_iErrorCount;
+        return false;
     }
 
     // So far so good, verify that the last two bytes 
     // of the frame are also zero.
     if ((cBuff[*iFrameSize - 2] + cBuff[*iFrameSize - 1]) > 0)
     {
-        *iErrorCount = *iErrorCount + 1;
-        return;
+        ++_iErrorCount;
+        return false;
     }
 
-    return;
+    return true;
 }
 
 unsigned int MinSegBus::iGetRingBuffCount()
 {
     return _iRingBufferCount;
+}
+
+unsigned int MinSegBus::iGetAddress()
+{
+    return _iAddress;
+}
+
+unsigned int MinSegBus::iGetErrorCount()
+{
+    return _iErrorCount;
 }
 
 void MinSegBus::clearRingBuff()
@@ -355,6 +371,21 @@ unsigned char MinSegBus::readRingBuff(int iXn)
     return cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex + (~iXn)) & BUFF_SIZE_MASK];
 }
 
+void MinSegBus::writeRingBuff(unsigned char cValue,
+    unsigned short *iUnsignedShortArray,
+    unsigned int iShortCount)
+{
+    unsigned char iAddressTemp = 0;
+    unsigned int iErrorCountTemp = 0;
+
+    writeRingBuff(cValue, &iAddressTemp,
+        iUnsignedShortArray,
+        iShortCount,
+        &iErrorCountTemp);
+
+    return;
+}
+
 void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned short *iUnsignedShortArray,
     unsigned int iShortCount,
@@ -366,7 +397,7 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned int iFrameSize = 9 + (iShortCount * 2);
 
     // Assume there is an error
-    *iErrorCount = 0x01;
+    _iErrorCount = 0x01;
 
     cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
     idxEnd = (cRingBuffer.iWriteIndex - 1);
@@ -391,10 +422,14 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
         }
 
         // See if this is a valid frame
-        *iErrorCount = 0x00;
+        _iErrorCount = 0x01;
         FromByteArray(iAddress, iUnsignedShortArray, iShortCount, &cBuff[0], iErrorCount);
 
     }
 
+    // Update external memory
+    *iErrorCount = _iErrorCount;
+
+    // Done
     return;
 }
