@@ -414,7 +414,7 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
         // Read the data into the conventional buffer
         for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
         {
-            cBuff[iFrameSize - idxTemp - 1] = readRingBuff( idxTemp);
+            cBuff[iFrameSize - idxTemp - 1] = readRingBuff(idxTemp);
         }
 
         // See if this is a valid frame

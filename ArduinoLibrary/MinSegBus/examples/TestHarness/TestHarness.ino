@@ -50,6 +50,8 @@ void loop()
     else
     {
         Serial.println("Step 7 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -65,6 +67,8 @@ void loop()
     else
     {
         Serial.println("Step 8 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -87,6 +91,8 @@ void loop()
     else
     {
         Serial.println("Step 9 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -103,6 +109,8 @@ void loop()
     else
     {
         Serial.println("Step 10 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -126,6 +134,8 @@ void loop()
     else
     {
         Serial.println("Step 11 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -143,6 +153,8 @@ void loop()
     else
     {
         Serial.println("Step 12 NOT OK.");
+        Serial.println("");
+        delay(2000);
         return;
     }
     delay(100);
@@ -383,6 +395,41 @@ void loop()
         return;
     }
 
+    // Write the data and try to convert after each byte is written (C# friendly implementation).
+    // This loops through the data many times to ensure the ring buffer indexing is working
+    // correctly
+    iAddress = 0x00;
+    iShortCount = 2;
+    for (int iTemp2 = 0; iTemp2 < 100; ++iTemp2)
+    {
+
+        iTemp = 0;
+        iErrorCount = 10;
+        iUnsignedShortArray[0] = 0;
+        iUnsignedShortArray[1] = 0;
+        while (iErrorCount > 0 && iTemp < 13)
+        {
+
+            mbus.writeRingBuff(cBuff[iTemp],
+                iUnsignedShortArray,
+                iShortCount);
+            iErrorCount = mbus.iGetErrorCount();
+            ++iTemp;
+
+        }
+        if (iUnsignedShortArray[0] != 1024 || iUnsignedShortArray[1] != 24)
+        {
+          Serial.println("Step 23 NOT OK.");
+          Serial.println("");
+          delay(2000);
+          return;
+        }
+
+    }
+    Serial.println("Step 23 OK.");
+    delay(100);
+
+
     // Write the data and try to convert after each byte is written (Cpp friendly implementation)
     iTemp = 0;
     iErrorCount = 10;
@@ -403,12 +450,12 @@ void loop()
     }
     if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24)
     {
-        Serial.println("Step 23 OK.");
+        Serial.println("Step 24 OK.");
         delay(100);
     }
     else
     {
-        Serial.println("Step 23 NOT OK.");
+        Serial.println("Step 24 NOT OK.");
         Serial.println("");
         delay(2000);
         return;
