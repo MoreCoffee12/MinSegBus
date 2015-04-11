@@ -411,7 +411,7 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
 
         // Compare with recorded crc and if it matches then the frame must
         // be at least a valid frame
-        if (crc == (unsigned short)((readRingBuff(3) << 8) + readRingBuff(2)));
+        if (crc == (unsigned short)((readRingBuff(2) << 8) + readRingBuff(3)))
         {
             // Retrieve the function (type descriptor), it must be one
             // to contain a 16-bit integer.
@@ -424,6 +424,10 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
                 }
 
             }
+
+            // Success
+            *iErrorCount = 0x00;
+
 
         }
 
