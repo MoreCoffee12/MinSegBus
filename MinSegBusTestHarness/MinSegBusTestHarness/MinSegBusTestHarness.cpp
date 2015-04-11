@@ -594,6 +594,7 @@ int _tmain(int argc, _TCHAR* argv[])
     // correctly
     iAddress = 0x00;
     iShortCount = 2;
+    mbus->clearRingBuff();
     for (int iTemp2 = 0; iTemp2 < 100000; ++iTemp2)
     {
 

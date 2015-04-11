@@ -314,7 +314,6 @@ bool  MinSegBus::_bIsFrameValid(unsigned char *cBuff,
     }
 
     // Compare with recorded crc
-    i = *((unsigned short*)&cBuff[*iFrameSize - 4]);
     if (crc != *((unsigned short*)&cBuff[*iFrameSize - 4]))
     {
         return false;
@@ -387,32 +386,46 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
 {
     unsigned int idxTemp;
     unsigned int iFrameSize = 9 + (iShortCount * 2);
+    // Calculate the starting index
+    unsigned int idxStart = (iFrameSize - 1);
 
     // Assume there is an error, this will clear only if the
     // frame is successfully parsed.
     *iErrorCount = 0x01;
 
+    // Save the value to ring buffer
     cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
 
-    // Assume that these are the last two zeros of the frame
-    if (cValue == 0x00 && readRingBuff(1) == 0x00)
+    // Check that leading and lagging zeros are in place and that
+    // the frame size is large enough
+    if ( ((cValue + readRingBuff(1) + readRingBuff(idxStart) + readRingBuff(idxStart - 1)) == 0) &&
+        readRingBuff(idxStart - 2) == iFrameSize)
     {
 
-        // Create and initialize the buffer
-        unsigned char cBuff[BUFF_SIZE];
-        for (int idx = 0; idx < BUFF_SIZE; ++idx)
+        // Calculate the CRC
+        unsigned short crc = 0xFFFF;
+        for (int i = idxStart; i > 3; --i)
         {
-            cBuff[idx] = 0xFF;
+            crc = _bUpdateCRC(crc, readRingBuff(i));
         }
 
-        // Read the data into the conventional buffer
-        for (idxTemp = 0; idxTemp < iFrameSize; idxTemp++)
+        // Compare with recorded crc and if it matches then the frame must
+        // be at least a valid frame
+        if (crc == (unsigned short)((readRingBuff(3) << 8) + readRingBuff(2)));
         {
-            cBuff[iFrameSize - idxTemp - 1] = readRingBuff(idxTemp);
-        }
+            // Retrieve the function (type descriptor), it must be one
+            // to contain a 16-bit integer.
+            if (readRingBuff(idxStart-4) == 0x01)
+            {
 
-        // See if this is a valid frame
-        FromByteArray(iAddress, iUnsignedShortArray, iShortCount, &cBuff[0], iErrorCount);
+                for (unsigned int iBuffIdx = 0; iBuffIdx < iShortCount; iBuffIdx++)
+                {
+                    iUnsignedShortArray[iBuffIdx] = (unsigned short)((readRingBuff(idxStart - 6 - (iBuffIdx << 1)) << 8) + readRingBuff(idxStart - 5 - (iBuffIdx << 1)));
+                }
+
+            }
+
+        }
 
     }
 
