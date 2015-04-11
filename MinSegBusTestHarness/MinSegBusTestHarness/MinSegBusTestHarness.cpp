@@ -594,7 +594,7 @@ int _tmain(int argc, _TCHAR* argv[])
     // correctly
     iAddress = 0x00;
     iShortCount = 2;
-    for (int iTemp2 = 0; iTemp2 < 100; ++iTemp2)
+    for (int iTemp2 = 0; iTemp2 < 100000; ++iTemp2)
     {
 
         iTemp = 0;
