@@ -550,6 +550,57 @@ int _tmain(int argc, _TCHAR* argv[])
     iAddress = 0x001;
     iUnsignedShortArray[0] = 1024;
     iUnsignedShortArray[1] = 24;
+    iUnsignedShortArray[2] = 1023;
+    iUnsignedShortArray[3] = 23;
+    iBytesReturned = 0;
+    mbus->ToByteArray(iAddress, iUnsignedShortArray, 4, maxbuffer, &cBuff[0], &iBytesReturned);
+    if (iBytesReturned == 17)
+    {
+        std::cout << "ToByteArray using the array call with 4 elements returned the expected number of bytes in ring buffer sequential test." << std::endl;
+    }
+    else
+    {
+        std::cout << "ToByteArray using the array call with 4 elements failed to return the expected number of bytes in ring buffer sequential test." << std::endl;
+        return 0;
+    }
+
+    // Write the data and try to convert after each byte is written (C# friendly implementation)
+    iTemp = 0;
+    iErrorCount = 10;
+    iAddress = 0x00;
+    iUnsignedShortArray[0] = 0;
+    iUnsignedShortArray[1] = 0;
+    iUnsignedShortArray[2] = 0;
+    iUnsignedShortArray[3] = 0;
+    iShortCount = 4;
+    while (iErrorCount > 0 && iTemp < 17)
+    {
+
+        mbus->writeRingBuff(cBuff[iTemp],
+            iUnsignedShortArray,
+            iShortCount);
+        iErrorCount = mbus->iGetErrorCount();
+        ++iTemp;
+
+    }
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24 && iUnsignedShortArray[2] == 1023 && iUnsignedShortArray[3] == 23)
+    {
+        std::cout << "writeRingBuff 4 elements (c# friendly) with arguments returned the expected values." << std::endl;
+    }
+    else
+    {
+        std::cout << "writeRingBuff 4 elements (c# friendly) with arguments failed to return the expected values." << std::endl;
+        return 0;
+    }
+
+    /////////////////////////////////////////////////////////////////////
+    // Write data and sequentially check to see if there is a complete
+    // frame stored in the buffer
+    /////////////////////////////////////////////////////////////////////
+    // Construct the frame for a 16-bit integer
+    iAddress = 0x001;
+    iUnsignedShortArray[0] = 1024;
+    iUnsignedShortArray[1] = 24;
     iBytesReturned = 0;
     mbus->ToByteArray(iAddress, iUnsignedShortArray, 2, maxbuffer, &cBuff[0], &iBytesReturned);
     if (iBytesReturned == 13)

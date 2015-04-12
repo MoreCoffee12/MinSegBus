@@ -384,8 +384,8 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned int iShortCount,
     unsigned int *iErrorCount)
 {
-    unsigned int idxTemp;
     unsigned int iFrameSize = 9 + (iShortCount * 2);
+
     // Calculate the starting index
     unsigned int idxStart = (iFrameSize - 1);
 
@@ -397,41 +397,41 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     cRingBuffer.cRingBuff[(cRingBuffer.iWriteIndex++) & BUFF_SIZE_MASK] = cValue;
 
     // Check that leading and lagging zeros are in place and that
-    // the frame size is large enough
-    if ( ((cValue + readRingBuff(1) + readRingBuff(idxStart) + readRingBuff(idxStart - 1)) == 0) &&
-        readRingBuff(idxStart - 2) == iFrameSize)
+    // the frame size is correct
+    if ((cValue + readRingBuff(1) + readRingBuff(idxStart) + readRingBuff(idxStart - 1) + readRingBuff(idxStart - 2)) != iFrameSize)
     {
-
-        // Calculate the CRC
-        unsigned short crc = 0xFFFF;
-        for (int i = idxStart; i > 3; --i)
-        {
-            crc = _bUpdateCRC(crc, readRingBuff(i));
-        }
-
-        // Compare with recorded crc and if it matches then the frame must
-        // be at least a valid frame
-        if (crc == (unsigned short)((readRingBuff(2) << 8) + readRingBuff(3)))
-        {
-            // Retrieve the function (type descriptor), it must be one
-            // to contain a 16-bit integer.
-            if (readRingBuff(idxStart-4) == 0x01)
-            {
-
-                for (unsigned int iBuffIdx = 0; iBuffIdx < iShortCount; iBuffIdx++)
-                {
-                    iUnsignedShortArray[iBuffIdx] = (unsigned short)((readRingBuff(idxStart - 6 - (iBuffIdx << 1)) << 8) + readRingBuff(idxStart - 5 - (iBuffIdx << 1)));
-                }
-
-            }
-
-            // Success
-            *iErrorCount = 0x00;
-
-
-        }
-
+        return;
     }
+
+    // Calculate the CRC
+    unsigned short crc = 0xFFFF;
+    for (int i = idxStart; i > 3; --i)
+    {
+        crc = _bUpdateCRC(crc, readRingBuff(i));
+    }
+
+    // Compare with recorded crc and if it matches then the frame must
+    // be at least a valid frame
+    if (crc != (unsigned short)((readRingBuff(2) << 8) + readRingBuff(3)))
+    {
+        return;
+    }
+
+    // Retrieve the function (type descriptor), it must be one
+    // to contain a 16-bit integer.
+    if (readRingBuff(idxStart - 4) != 0x01)
+    {
+        return;
+    }
+
+    // Copy the data over
+    for (unsigned int iBuffIdx = 0; iBuffIdx < iShortCount; ++iBuffIdx)
+    {
+        iUnsignedShortArray[iBuffIdx] = (unsigned short)((readRingBuff(idxStart - 6 - (iBuffIdx << 1)) << 8) + readRingBuff(idxStart - 5 - (iBuffIdx << 1)));
+    }
+
+    // Success
+    *iErrorCount = 0x00;
 
     // Done
     return;
