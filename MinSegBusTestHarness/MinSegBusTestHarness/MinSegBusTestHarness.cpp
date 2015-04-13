@@ -547,7 +547,7 @@ int _tmain(int argc, _TCHAR* argv[])
     // frame stored in the buffer
     /////////////////////////////////////////////////////////////////////
     // Construct the frame for a 16-bit integer
-    iAddress = 0x001;
+    iAddress = 0x003;
     iUnsignedShortArray[0] = 1024;
     iUnsignedShortArray[1] = 24;
     iUnsignedShortArray[2] = 1023;
@@ -583,7 +583,8 @@ int _tmain(int argc, _TCHAR* argv[])
         ++iTemp;
 
     }
-    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24 && iUnsignedShortArray[2] == 1023 && iUnsignedShortArray[3] == 23)
+    iAddress = mbus->iGetAddress();
+    if (iUnsignedShortArray[0] == 1024 && iUnsignedShortArray[1] == 24 && iUnsignedShortArray[2] == 1023 && iUnsignedShortArray[3] == 23 && iAddress == 0x03)
     {
         std::cout << "writeRingBuff 4 elements (c# friendly) with arguments returned the expected values." << std::endl;
     }

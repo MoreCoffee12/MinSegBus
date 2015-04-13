@@ -382,6 +382,8 @@ void MinSegBus::writeRingBuff(unsigned char cValue,
         &iErrorCountTemp);
 
     _iErrorCount = iErrorCountTemp;
+    _iAddress = iAddressTemp;
+
     return;
 }
 
@@ -435,6 +437,9 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     {
         iUnsignedShortArray[iBuffIdx] = (unsigned short)((readRingBuff(idxStart - 6 - (iBuffIdx << 1)) << 8) + readRingBuff(idxStart - 5 - (iBuffIdx << 1)));
     }
+
+    // Address
+    *iAddress = readRingBuff(idxStart - 3);
 
     // Success
     *iErrorCount = 0x00;
