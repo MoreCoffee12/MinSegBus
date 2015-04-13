@@ -158,6 +158,12 @@ void MinSegBus::FromByteArray(unsigned char *iAddress,
     }
 }
 
+unsigned int MinSegBus::iGetFrameCount_Short(unsigned int iShortCount)
+{
+    return 9 + (iShortCount * 2);
+}
+
+
 // Deconstruct the byte array with the frame data
 // for a 32-bit float
 void MinSegBus::FloatFromByteArray(unsigned char *iAddress,
@@ -384,7 +390,7 @@ void MinSegBus::writeRingBuff(unsigned char cValue, unsigned char *iAddress,
     unsigned int iShortCount,
     unsigned int *iErrorCount)
 {
-    unsigned int iFrameSize = 9 + (iShortCount * 2);
+    unsigned int iFrameSize = iGetFrameCount_Short(iShortCount);
 
     // Calculate the starting index
     unsigned int idxStart = (iFrameSize - 1);
